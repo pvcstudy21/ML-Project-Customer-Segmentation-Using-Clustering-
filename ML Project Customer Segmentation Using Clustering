@@ -111,3 +111,18 @@ print(df)
 
 MinMax = MinMaxScaler()
 MinMax.fit_transform(df)
+
+# Model Training
+
+x = df
+
+# PCA 
+
+pca = PCA(n_components=2).fit(x)
+
+print(pca.components_)
+
+print(pca.explained_variance_)
+
+# Transform samples using the PCA fit
+pca_2d = pca.transform(x)
