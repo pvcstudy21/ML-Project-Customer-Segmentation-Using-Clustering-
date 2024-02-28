@@ -1,0 +1,70 @@
+# Import Libraries
+
+# for data manipulation
+
+import numpy as np
+import pandas as pd
+
+# for data visualization
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.cluster import hierarchy
+
+# for data preprossesing
+
+from sklearn.preprocessing import MinMaxScaler,StandardScaler
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.decomposition import PCA
+
+# for model training 
+
+from sklearn.model_selection import train_test_split,GridSearchCV,RandomizedSearchCV
+from sklearn.cluster import KMeans, AgglomerativeClustering
+
+#for model evalueation
+
+from sklearn.metrics import silhouette_score
+
+# Miscellaneous
+
+import warnings
+warnings.filterwarnings("ignore")
+
+# Data Gathering
+
+df = pd.read_csv(r"C:\Users\Dell\Downloads\customers.csv")
+print(df)
+
+# Exploratory Data Analysis
+
+print(df.shape)
+print(df.columns)
+print(df.info())
+print(df.describe())
+print(df.isna().sum())                                                      # give the number of missing values
+
+# check for outliers
+
+print(sns.boxenplot(df["Annual Income (k$)"]))
+print(sns.boxenplot(df["Spending Score (1-100)"]))
+
+Q1 = df.quantile(0.25)
+Q3 = df.quantile(0.75)
+IQR = Q3-Q1
+LowerTail = Q1-1.5*IQR
+UpperTail = Q3+1.5*IQR
+
+show_outliers = (df<LowerTail)|(df>UpperTail)
+outlier_count = show_outliers.sum()
+print(outlier_count)
+
+print(sns.pairplot(df, x_vars = ["Age", "Annual Income (k$)", "Spending Score (1-100)"], 
+               y_vars = ["Age", "Annual Income (k$)", "Spending Score (1-100)"], 
+               hue = "Gender", 
+               kind= "scatter",
+               palette = "YlGnBu",
+               height = 2,
+               plot_kws={"s": 35, "alpha": 0.8}))
+
+print(sns.heatmap(df.corr(),annot=True))
