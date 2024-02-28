@@ -68,3 +68,46 @@ print(sns.pairplot(df, x_vars = ["Age", "Annual Income (k$)", "Spending Score (1
                plot_kws={"s": 35, "alpha": 0.8}))
 
 print(sns.heatmap(df.corr(),annot=True))
+
+# Feature Engineering
+
+df = df.drop(["CustomerID"],axis=1)
+
+# handling outliers
+
+def remove_outliers(column):
+    q1 = column.quantile(0.25)
+    q3 = column.quantile(0.75)
+    iqr = q3 - q1
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+    return column[(column >= lower_bound) & (column <= upper_bound)]
+
+df = df.apply(lambda col: remove_outliers(col) if np.issubdtype(col.dtype, np.number) else col)
+
+show_outliers = (df<LowerTail)|(df>UpperTail)
+outlier_count = show_outliers.sum()
+print(outlier_count)
+
+# handling missing values
+
+print(df.isna().sum())
+
+print(df["Annual Income (k$)"].value_counts())
+print(df["Annual Income (k$)"].unique())
+print(df["Annual Income (k$)"].describe())
+
+df["Annual Income (k$)"] = df["Annual Income (k$)"].fillna(59.)
+
+print(df.isna().sum())
+
+# encoding
+
+df = pd.get_dummies(df,columns = ["Gender"])                                               # OneHotEncoding
+
+print(df)
+
+# scaling
+
+MinMax = MinMaxScaler()
+MinMax.fit_transform(df)
