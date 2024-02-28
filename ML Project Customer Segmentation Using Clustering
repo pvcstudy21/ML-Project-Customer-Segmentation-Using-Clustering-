@@ -59,13 +59,13 @@ show_outliers = (df<LowerTail)|(df>UpperTail)
 outlier_count = show_outliers.sum()
 print(outlier_count)
 
-print(sns.pairplot(df, x_vars = ["Age", "Annual Income (k$)", "Spending Score (1-100)"], 
+sns.pairplot(df, x_vars = ["Age", "Annual Income (k$)", "Spending Score (1-100)"], 
                y_vars = ["Age", "Annual Income (k$)", "Spending Score (1-100)"], 
                hue = "Gender", 
                kind= "scatter",
                palette = "YlGnBu",
                height = 2,
-               plot_kws={"s": 35, "alpha": 0.8}))
+               plot_kws={"s": 35, "alpha": 0.8})
 
 print(sns.heatmap(df.corr(),annot=True))
 
@@ -126,3 +126,173 @@ print(pca.explained_variance_)
 
 # Transform samples using the PCA fit
 pca_2d = pca.transform(x)
+
+# Kmeans Clustering
+
+wcss = []
+for i in range(1,11):
+    km = KMeans(n_clusters=i,init='k-means++', max_iter=300, n_init=10, random_state=0)
+    km.fit(x)
+    wcss.append(km.inertia_)
+plt.plot(range(1,11),wcss, c="#FF0000")
+plt.gca().spines["top"].set_visible(False)
+plt.gca().spines["right"].set_visible(False)
+plt.title('Elbow Method', size=14)
+plt.xlabel('Number of clusters', size=12)
+plt.ylabel('wcss', size=14)
+plt.show()
+
+# Kmeans algorithm
+
+# n_clusters: Number of clusters. In our case 5
+# init: k-means++. Smart initialization
+# max_iter: Maximum number of iterations of the k-means algorithm for a single run
+# n_init: Number of time the k-means algorithm will be run with different centroid seeds. 
+# random_state: Determines random number generation for centroid initialization.
+
+kmeans = KMeans(n_clusters=5, init='k-means++', max_iter=10, n_init=10, random_state=0)
+
+# Fit and predict 
+
+y_means = kmeans.fit_predict(x)
+
+fig, ax = plt.subplots(figsize = (8, 6))
+plt.scatter(pca_2d[:, 0], pca_2d[:, 1], c=y_means, edgecolor="none", cmap=plt.cm.get_cmap("viridis", 5),alpha=0.5)
+        
+plt.gca().spines["top"].set_visible(False)
+plt.gca().spines["right"].set_visible(False)
+plt.gca().spines["bottom"].set_visible(False)
+plt.gca().spines["left"].set_visible(False)
+
+plt.xticks(size=12)
+plt.yticks(size=12)
+
+plt.xlabel("Component 1", size = 14, labelpad=10)
+plt.ylabel("Component 2", size = 14, labelpad=10)
+
+plt.title('Domain grouped into 5 clusters', size=16)
+
+
+plt.colorbar(ticks=[0, 1, 2, 3, 4]);
+
+plt.show()
+
+# Model Evaluation
+
+# Calculate Silhouette Score
+
+silhouette_avg = silhouette_score(x,y_means)
+
+print("The average silhouette_score is :", silhouette_avg)
+
+#wcss : within cluster sum of squares
+
+print(kmeans.inertia_)
+
+# centroids
+
+centroids = pd.DataFrame(kmeans.cluster_centers_, columns = ["Age", "Annual Income", "Spending", "Male", "Female"])
+
+centroids.index_name = "ClusterID"
+
+centroids["ClusterID"] = centroids.index
+
+centroids = centroids.reset_index(drop=True)
+
+print(centroids)
+
+X_new = np.array([[43, 76, 56, 0, 1]]) 
+ 
+new_customer = kmeans.predict(X_new)
+print(f"The new customer belongs to segment {new_customer[0]}")
+
+# further classification using hierarchical clustering
+
+# Perform hierarchical clustering
+
+modelAC = AgglomerativeClustering(n_clusters=5)                                                  # You can specify the number of clusters
+modelAC.fit(x)
+
+# Perform hierarchical clustering
+Z = hierarchy.linkage(x, method='complete')                                      # You can use different linkage methods
+
+# Plot the dendrogram
+plt.figure(figsize=(8, 6))
+dn = hierarchy.dendrogram(Z)
+plt.title('Hierarchical Clustering Dendrogram')
+plt.xlabel('Sample Index')
+plt.ylabel('Distance')
+plt.show()
+
+# Fit and predict 
+
+y_means_AC = modelAC.fit_predict(x)
+
+fig, ax = plt.subplots(figsize = (8, 6))
+
+plt.scatter(pca_2d[:, 0], pca_2d[:, 1],
+            c=y_means_AC, 
+            edgecolor="none", 
+            cmap=plt.cm.get_cmap("viridis", 5),
+            alpha=0.5)
+        
+plt.gca().spines["top"].set_visible(False)
+plt.gca().spines["right"].set_visible(False)
+plt.gca().spines["bottom"].set_visible(False)
+plt.gca().spines["left"].set_visible(False)
+
+plt.xticks(size=12)
+plt.yticks(size=12)
+plt.xlabel("Component 1", size = 14, labelpad=10)
+plt.ylabel("Component 2", size = 14, labelpad=10)
+plt.title('Domain grouped into 5 clusters', size=16)
+plt.colorbar(ticks=[0, 1, 2, 3, 4]);
+plt.show()
+
+# Calculate Silhouette Score
+
+silhouette_avg_AC = silhouette_score(x,y_means_AC)
+
+print("The average silhouette_score is :", silhouette_avg_AC)
+
+# Comparision Between Kmeans And Agglomerative Clustering
+
+import matplotlib.pyplot as plt
+
+# Create figure and axes for subplots
+fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+
+# Scatterplot for K-means clustering
+scatterplot_kmeans = axes[0].scatter(pca_2d[:, 0], pca_2d[:, 1],
+                                     c=y_means, 
+                                     edgecolor="none", 
+                                     cmap=plt.cm.get_cmap("viridis", 5),
+                                     alpha=0.5)
+axes[0].set_title('K-means Clustering', size=16)
+axes[0].set_xlabel("Component 1", size=14, labelpad=10)
+axes[0].set_ylabel("Component 2", size=14, labelpad=10)
+axes[0].spines["top"].set_visible(False)
+axes[0].spines["right"].set_visible(False)
+axes[0].spines["bottom"].set_visible(False)
+axes[0].spines["left"].set_visible(False)
+axes[0].tick_params(axis='both', which='major', labelsize=12)
+fig.colorbar(scatterplot_kmeans, ax=axes[0], ticks=[0, 1, 2, 3, 4])
+
+# Scatterplot for Agglomerative clustering
+scatterplot_agglomerative = axes[1].scatter(pca_2d[:, 0], pca_2d[:, 1],
+                                            c=y_means_AC, 
+                                            edgecolor="none", 
+                                            cmap=plt.cm.get_cmap("viridis", 5),
+                                            alpha=0.5)
+axes[1].set_title('Agglomerative Clustering', size=16)
+axes[1].set_xlabel("Component 1", size=14, labelpad=10)
+axes[1].set_ylabel("Component 2", size=14, labelpad=10)
+axes[1].spines["top"].set_visible(False)
+axes[1].spines["right"].set_visible(False)
+axes[1].spines["bottom"].set_visible(False)
+axes[1].spines["left"].set_visible(False)
+axes[1].tick_params(axis='both', which='major', labelsize=12)
+fig.colorbar(scatterplot_agglomerative, ax=axes[1], ticks=[0, 1, 2, 3, 4])
+
+plt.tight_layout()
+plt.show()
